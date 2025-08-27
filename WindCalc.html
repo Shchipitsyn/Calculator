@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор ветра</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #fafafa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: normal;
+        }
+
+        input {
+            width: 92.9%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .unit-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin: 0 10px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .unit-label {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .calculate-button {
+            width: 48%;
+            padding: 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .calculate-button:hover {
+            background-color: #0056b3;
+        }
+
+        .calculate-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .result-section {
+            margin-top: 20px;
+        }
+
+        .arrow {
+            font-size: 36px;
+        }
+
+        .result {
+            font-size: 24px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .result span {
+            font-size: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+			<img src="https://github.com/Shchipitsyn/Calculator/raw/main/Logo.png" alt="Логотип" style="display: block; margin: 0 auto; width: 200px;">
+        <h1>Калькулятор ветра</h1>
+
+        <input type="number" id="course" placeholder="Посадочный курс (°)" />
+        <input type="number" id="wind-direction" placeholder="Магнитное направление ветра (°)" />
+        <input type="number" id="wind-speed" placeholder="Скорость ветра" />
+
+        <!-- Тумблер -->
+        <div class="unit-selector">
+            <span>м/с</span>
+            <label class="switch">
+                <input type="checkbox" id="unit-toggle">
+                <span class="slider"></span>
+            </label>
+            <span>kt</span>
+        </div>
+
+        <!-- Две кнопки для расчета -->
+        <div class="calculate-container">
+            <button id="calculate-ms" class="calculate-button">В м/с</button>
+            <button id="calculate-kt" class="calculate-button">В узлах</button>
+        </div>
+
+        <div class="result-section" style="display: none;">
+            <div id="wind-arrow" class="arrow"></div>
+            <div id="wind-result" class="result"></div>
+            <div id="crosswind-arrow" class="arrow"></div>
+            <div id="crosswind-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let inputUnit = 'ms';  // По умолчанию метры в секунду для ввода
+
+        // Переключение единиц измерения входных данных через тумблер
+        document.getElementById('unit-toggle').addEventListener('change', (event) => {
+            if (event.target.checked) {
+                inputUnit = 'kt';  // Если тумблер включен, выбираем узлы для ввода
+            } else {
+                inputUnit = 'ms';  // Если выключен, выбираем метры в секунду для ввода
+            }
+        });
+
+        // Функция для расчета в м/с
+        function calculateWindMs() {
+            const course = parseFloat(document.getElementById('course').value);
+            const windDirection = parseFloat(document.getElementById('wind-direction').value);
+            let windSpeed = parseFloat(document.getElementById('wind-speed').value);
+
+            if (isNaN(course) || isNaN(windDirection) || isNaN(windSpeed)) {
+                alert('Пожалуйста, введите все значения!');
+                return;
+            }
+
+            // Переводим скорость в м/с, если необходимо
+            if (inputUnit === 'kt') {
+                windSpeed *= 0.514444;  // Переводим узлы в м/с
+            }
+
+            const deltaAngle = windDirection - course;
+            const sinDelta = Math.sin(deltaAngle * Math.PI / 180);
+            const cosDelta = Math.cos(deltaAngle * Math.PI / 180);
+
+            const crosswindSpeed = Math.abs(sinDelta * windSpeed);
+            const headwindSpeed = Math.abs(cosDelta * windSpeed);
+            const windArrow = cosDelta < 0 ? '⬆️' : '⬇️';
+            const crosswindArrow = sinDelta < 0 ? '➡️' : '⬅️';
+
+            document.querySelector('.result-section').style.display = 'block';
+
+            // Отображаем только ненулевые результаты, с погрешностью
+            if (headwindSpeed > 0.01) {  // Погрешность 0.01 м/с
+                document.getElementById('wind-arrow').textContent = windArrow + " ";
+                document.getElementById('wind-result').textContent = headwindSpeed.toFixed(2) + ' м/с';
+            } else {
+                document.getElementById('wind-arrow').textContent = '';
+                document.getElementById('wind-result').textContent = '';
+            }
+
+            if (crosswindSpeed > 0.01) {  // Погрешность 0.01 м/с
+                document.getElementById('crosswind-arrow').textContent = crosswindArrow + " ";
+                document.getElementById('crosswind-result').textContent = crosswindSpeed.toFixed(2) + ' м/с';
+            } else {
+                document.getElementById('crosswind-arrow').textContent = '';
+                document.getElementById('crosswind-result').textContent = '';
+            }
+        }
+
+        // Функция для расчета в узлах
+        function calculateWindKt() {
+            const course = parseFloat(document.getElementById('course').value);
+            const windDirection = parseFloat(document.getElementById('wind-direction').value);
+            let windSpeed = parseFloat(document.getElementById('wind-speed').value);
+
+            if (isNaN(course) || isNaN(windDirection) || isNaN(windSpeed)) {
+                alert('Пожалуйста, введите все значения!');
+                return;
+            }
+
+            // Переводим скорость в м/с, если необходимо
+            if (inputUnit === 'kt') {
+                windSpeed *= 0.514444;  // Переводим узлы в м/с
+            }
+
+            const deltaAngle = windDirection - course;
+            const sinDelta = Math.sin(deltaAngle * Math.PI / 180);
+            const cosDelta = Math.cos(deltaAngle * Math.PI / 180);
+
+            const crosswindSpeed = Math.abs(sinDelta * windSpeed) / 0.514444;  // Переводим результат в узлы
+            const headwindSpeed = Math.abs(cosDelta * windSpeed) / 0.514444;  // Переводим результат в узлы
+            const windArrow = cosDelta < 0 ? '⬆️' : '⬇️';
+            const crosswindArrow = sinDelta < 0 ? '➡️' : '⬅️';
+
+            document.querySelector('.result-section').style.display = 'block';
+
+            // Отображаем только ненулевые результаты, с погрешностью
+            if (headwindSpeed > 0.01) {  // Погрешность 0.01 узла
+                document.getElementById('wind-arrow').textContent = windArrow + " ";
+                document.getElementById('wind-result').textContent = headwindSpeed.toFixed(2) + ' узлов';
+            } else {
+                document.getElementById('wind-arrow').textContent = '';
+                document.getElementById('wind-result').textContent = '';
+            }
+
+            if (crosswindSpeed > 0.01) {  // Погрешность 0.01 узла
+                document.getElementById('crosswind-arrow').textContent = crosswindArrow + " ";
+                document.getElementById('crosswind-result').textContent = crosswindSpeed.toFixed(2) + ' узлов';
+            } else {
+                document.getElementById('crosswind-arrow').textContent = '';
+                document.getElementById('crosswind-result').textContent = '';
+            }
+        }
+
+        // Обработчики для кнопок расчета
+        document.getElementById('calculate-ms').addEventListener('click', calculateWindMs);
+        document.getElementById('calculate-kt').addEventListener('click', calculateWindKt);
+    </script>
+</body>
+</html>
